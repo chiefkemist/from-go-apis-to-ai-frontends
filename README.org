@@ -1,4 +1,263 @@
 * Go Novella
 
+From Go APIs to AI-Featured Frontends...
 
-TODO...
+* Summary of the Go net/http Package
+
+The Go `net/http` package provides HTTP client and server implementations. It's used for making API calls and building web servers.
+
+** Key Features
+
+- Support for HTTP/1.1, HTTP2
+- TLS (HTTPS) support
+- HTTP client and server abstraction
+- Routing support via `http.ServeMux`
+
+** HTTP Client
+
+The `http.Client` type is used to perform HTTP requests.
+
+*** Creating an HTTP GET Request
+
+#+begin_src go
+
+package main
+
+import (
+    "fmt"
+    "io"
+    "net/http"
+)
+
+func main() {
+    resp, err := http.Get("https://api.example.com/data")
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    defer resp.Body.Close()
+
+    body, err := io.ReadAll(resp.Body)
+    if err != nil {
+        fmt.Println("Error reading response body:", err)
+        return
+    }
+
+    fmt.Println("Response Body:", string(body))
+}
+
+#+end_src
+
+*** Creating an HTTP POST Request
+
+#+begin_src go
+
+package main
+
+import (
+    "bytes"
+    "fmt"
+    "net/http"
+)
+
+func main() {
+    jsonData := []byte(`{"key": "value"}`)
+    resp, err := http.Post("https://api.example.com/data", "application/json", bytes.NewBuffer(jsonData))
+    if err != nil {
+        fmt.Println("Error:", err)
+        return
+    }
+    defer resp.Body.Close()
+
+    fmt.Println("Response Status:", resp.Status)
+}
+
+#+end_src
+
+** HTTP Server
+The `http.Server` type is used to implement HTTP servers.
+
+*** Basic HTTP Server
+
+#+begin_src go
+
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "Hello, World!")
+}
+
+func main() {
+    http.HandleFunc("/hello", helloHandler)
+    http.ListenAndServe(":8080", nil)
+}
+
+#+end_src
+
+*** Using http.ServeMux for Routing
+
+#+begin_src go
+
+package main
+
+import (
+    "fmt"
+    "net/http"
+)
+
+func helloHandler(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, "Hello, World!")
+}
+
+func main() {
+    mux := http.NewServeMux()
+    mux.HandleFunc("/hello", helloHandler)
+
+    server := &http.Server{
+        Addr:    ":8080",
+        Handler: mux,
+    }
+
+    server.ListenAndServe()
+}
+
+#+end_src
+
+** Demo 1: Interact with OpenAI's gpt-4o API from Go
+
+#+begin_src go :imports '("bytes" "encoding/base64" "encoding/json" "fmt" "io" "net/http" "os" "github.com/tidwall/gjson")
+
+
+var (
+    apiURL = "https://api.openai.com/v1/chat/completions" // replace with actual endpoint
+    apiKey = os.Getenv("OPENAI_API_KEY")
+    imagePath = "assets/from-go-apis-to-ai-enhanced-frontends.webp"
+    prompt = "Describe the scenery in the image."
+)
+
+fmt.Println(fmt.Sprintf("Extracting Info from: %v\n", imagePath))
+// Load image and encode as base64
+imageBytes, err := os.ReadFile(imagePath)
+if err != nil {
+    fmt.Println("Error reading image file:", err)
+    return
+}
+imageBase64 := base64.StdEncoding.EncodeToString(imageBytes)
+
+requestBody, err := json.Marshal(map[string]any{
+	"model":      "gpt-4o",
+    "max_tokens": 4096,
+    "messages": []map[string]any{
+		{
+			"role": "user",
+			"content": []map[string]any{
+				{
+					"type": "text",
+					"text": prompt,
+				},
+				{
+					"type": "image_url",
+					"image_url": map[string]any{
+						"url": fmt.Sprintf("data:image/webp;base64, %s", imageBase64),
+					},
+				},
+			},
+		},
+	},
+})
+if err != nil {
+	fmt.Println("Error marshalling JSON:", err)
+	return
+}
+
+req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(requestBody))
+if err != nil {
+	fmt.Println("Error creating request:", err)
+	return
+}
+req.Header.Set("Authorization", "Bearer "+apiKey)
+req.Header.Set("Content-Type", "application/json")
+
+client := &http.Client{}
+resp, err := client.Do(req)
+if err != nil {
+    fmt.Println("Error making request:", err)
+    return
+}
+defer resp.Body.Close()
+
+body, err := io.ReadAll(resp.Body)
+if err != nil {
+    fmt.Println("Error reading response body:", err)
+    return
+}
+
+responseString := string(body)
+// fmt.Println("Response:", responseString)
+
+result := gjson.Get(responseString, "choices.0.message.content")
+
+fmt.Println(result.Str)
+
+#+end_src
+
+#+RESULTS:
+: Extracting Info from: assets/from-go-apis-to-ai-enhanced-frontends.webp
+:
+: The image depicts a vibrant and futuristic scene, blending technology and African cultural elements. In the foreground, people are working on computers in an open, innovative office space filled with colorful digital displays and lush plants. The background features an urban landscape with tall buildings and adorned with giant, artistic masks and planets hanging from the ceiling. The scene is infused with warm colors, suggesting a sunset ambiance, and prominently includes AI and tech references like "GPT-4" and "DALL-E 3." The overall atmosphere conveys a fusion of tradition and cutting-edge technology.
+
+
+* Parsing JSON with the GJSON Package
+
+** Overview
+- Fast JSON parser for Go
+- Uses path syntax to extract values from JSON
+- No serialization/deserialization required
+- Zero dependencies
+- Thread-safe
+
+** Key Features
+*** Path Syntax
+#+begin_src go
+{"name": {"first": "John"}}
+// Access with: "name.first" -> "John"
+#+end_src
+
+*** Supported Types
+- Strings
+- Numbers
+- Booleans
+- Null
+- Arrays
+- Objects
+
+*** Performance
+- Very fast parsing
+- No allocation overhead
+- Operates directly on []byte
+
+** Common Operations
+#+begin_src go
+value := gjson.Get(json, "path.to.value")
+value.String()  // Get as string
+value.Int()     // Get as integer
+value.Array()   // Get as array
+value.Map()     // Get as map
+#+end_src
+
+** Modifiers
+- @reverse: Reverse array
+- @flatten: Flatten array
+- @join: Join array elements
+- @valid: Validate JSON
+
+** Use Cases
+- API responses parsing
+- Configuration handling
+- JSON data extraction
+- Performance-critical JSON operations
