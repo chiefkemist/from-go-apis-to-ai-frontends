@@ -896,14 +896,6 @@ go run cli.go y2j contracts/demo2.yaml demos/demo3/openapi.json
 #+RESULTS:
 : Successfully converted contracts/demo2.yaml to demos/demo3/openapi.json
 
-** Download Swagger Assets
-
-#+begin_src bash :results output
-
-
-
-#+end_src
-
 ** Updated Server
 
 #+begin_src go :tangle demos/demo3.go :mkdirp yes :cache no
@@ -1016,3 +1008,57 @@ const swaggerTemplate = `
 
 #+end_src
 
+
+* Demo 4: Image Information Retrieval
+
+** The Entities
+
+#+begin_src cue :tangle contracts/image.cue :mkdirp yes :cache no
+
+// Image upload contract
+#ImageUpload: {
+    // Unique identifier
+    id:    string & =~"^[0-9a-fA-F]{24}$"
+
+    // Image title
+    title: string & {
+        minLength: 3
+        maxLength: 100
+        =~"^[A-Za-z0-9 -_.]+$"
+    }
+
+    // Base64 encoded image
+    image: string & {
+        // Must be base64 encoded
+        =~"^data:image/(jpeg|png|gif);base64,[A-Za-z0-9+/]+=*$"
+
+        // Reasonable size limit (10MB in base64)
+        maxLength: 13_900_000
+    }
+}
+
+
+#+end_src
+
+
+** Entities as JSON / Yaml Schema:
+
+#+begin_src bash :results output
+
+rm -rf contracts/demo4.yaml # delete if already exists
+
+cue def contracts/image.cue -o contracts/demo4.yaml --out openapi+yaml # generate schema
+
+cat contracts/demo4.yaml # show the contents of the resulting file
+
+#+end_src
+
+** Yaml to JSON conversion
+
+#+begin_src bash :results output
+
+mkdir -p demos/demo4
+
+go run cli.go y2j contracts/demo2.yaml demos/demo4/openapi.json
+
+#+end_src
