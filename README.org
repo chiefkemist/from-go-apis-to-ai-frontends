@@ -2,7 +2,184 @@
 
 From Go APIs to AI-Featured Frontends...
 
-* Summary of the Go net/http Package
+
+* Building Modern APIs with Go, OpenAPI, and CUE
+
+** Introduction
+
+In this course, we'll explore the powerful combination of Go, OpenAPI, and CUE to build robust, type-safe, and well-documented APIs. This modern approach leverages the strengths of each technology to create maintainable and validated API implementations.
+
+** Core Technologies
+
+*** Go Programming Language
+
+Go provides an excellent foundation for building web services with its:
+- Strong standard library
+- Built-in concurrency
+- Excellent performance characteristics
+- Clear and maintainable syntax
+- Rich ecosystem of tools and packages
+
+*** Go's HTTP Package
+
+The net/http package serves as both:
+
+**** Server-side
+
+- Native HTTP server implementation
+- Request routing and handling
+- Middleware support
+- Response writing utilities
+
+**** Client-side
+
+- HTTP client operations
+- Request composition
+- Response handling
+- Connection pooling
+
+*** CUE Language
+
+CUE (Configure, Unify, Execute) brings several crucial capabilities:
+
+**** Schema Definition
+
+- Type-safe definitions
+- Constraint specifications
+- Composition and inheritance
+- Default values
+
+**** JSON Schema Generation
+
+- OpenAPI 3.0 schema generation
+- Type validation
+- Documentation generation
+- Contract enforcement
+
+**** Runtime Validation
+
+- Request/response validation
+- Data consistency checks
+- Error messaging
+- Type assertions
+
+** Objectives
+
+- Design APIs using OpenAPI 3.0 specifications
+- Define schemas using CUE's powerful constraint system
+- Generate OpenAPI documentation from CUE definitions
+- Implement APIs using Go's standard library
+- Validate requests and responses using CUE
+- Create maintainable and type-safe API implementations
+
+** Why This Combination?
+
+*** Type Safety
+
+- Go's static typing
+- CUE's constraint system
+- OpenAPI's schema definitions
+
+*** Developer Experience
+
+- Clear separation of concerns
+- Automated validation
+- Self-documenting APIs
+- Tool-friendly formats
+
+*** Maintenance Benefits
+
+- Single source of truth for types
+- Automated schema generation
+- Runtime validation
+- Clear contract definitions
+
+
+** Tooling Installation Guide
+
+*** Setting Up Development Environment
+
+**** Installing Goenv
+
+***** macOS (using Homebrew)
+
+#+begin_src bash
+
+brew install goenv
+
+#+end_src
+
+***** Linux/Unix
+
+#+begin_src bash
+
+git clone https://github.com/go-nv/goenv.git ~/.goenv
+
+#+end_src
+
+***** Configure Shell (add to ~/.bashrc or ~/.zshrc)
+
+#+begin_src bash
+
+export GOENV_ROOT="$HOME/.goenv"
+export PATH="$GOENV_ROOT/bin:$PATH"
+eval "$(goenv init -)"
+
+#+end_src
+
+**** Installing Go using Goenv
+
+***** List available versions
+
+#+begin_src bash
+
+goenv install --list
+
+#+end_src
+
+***** Install latest stable version
+
+#+begin_src bash
+
+goenv install 1.23.3
+
+#+end_src
+
+***** Set global Go version
+
+#+begin_src bash
+
+goenv global 1.23.3
+
+#+end_src
+
+***** Verify installation
+
+#+begin_src bash
+
+go version
+
+#+end_src
+
+**** Installing CUE
+
+***** Using Go install
+
+#+begin_src bash
+
+go install cuelang.org/go/cmd/cue@latest
+
+#+end_src
+
+***** Verify CUE installation
+
+#+begin_src bash
+
+cue version
+
+#+end_src
+
+* The Go net/http Package
 
 The Go `net/http` package provides HTTP client and server implementations. It's used for making API calls and building web servers.
 
@@ -128,7 +305,71 @@ func main() {
 
 #+end_src
 
-** Demo 1: Interact with OpenAI's gpt-4o API from Go
+
+** Http package documentation
+
+[[https://pkg.go.dev/net/http][https://pkg.go.dev/net/http]]
+
+* Parsing JSON with the GJSON Package
+
+** Overview
+- Fast JSON parser for Go
+- Uses path syntax to extract values from JSON
+- No serialization/deserialization required
+- Zero dependencies
+- Thread-safe
+
+** Key Features
+*** Path Syntax
+#+begin_src go
+{"name": {"first": "John"}}
+// Access with: "name.first" -> "John"
+#+end_src
+
+*** Supported Types
+- Strings
+- Numbers
+- Booleans
+- Null
+- Arrays
+- Objects
+
+*** Performance
+- Very fast parsing
+- No allocation overhead
+- Operates directly on []byte
+
+** Common Operations
+#+begin_src go
+value := gjson.Get(json, "path.to.value")
+value.String()  // Get as string
+value.Int()     // Get as integer
+value.Array()   // Get as array
+value.Map()     // Get as map
+#+end_src
+
+** Modifiers
+- @reverse: Reverse array
+- @flatten: Flatten array
+- @join: Join array elements
+- @valid: Validate JSON
+
+** Use Cases
+- API responses parsing
+- Configuration handling
+- JSON data extraction
+- Performance-critical JSON operations
+
+
+** GJSON Documentation Links
+
+*** GitHub Repository
+[[https://github.com/tidwall/gjson][https://github.com/tidwall/gjson]]
+
+*** GoDoc Documentation
+[[https://pkg.go.dev/github.com/tidwall/gjson][https://pkg.go.dev/github.com/tidwall/gjson]]
+
+* Demo 1: Interact with OpenAI's gpt-4o API from Go
 
 #+begin_src go :imports '("bytes" "encoding/base64" "encoding/json" "fmt" "io" "net/http" "os" "github.com/tidwall/gjson")
 
@@ -212,52 +453,432 @@ fmt.Println(result.Str)
 : The image depicts a vibrant and futuristic scene, blending technology and African cultural elements. In the foreground, people are working on computers in an open, innovative office space filled with colorful digital displays and lush plants. The background features an urban landscape with tall buildings and adorned with giant, artistic masks and planets hanging from the ceiling. The scene is infused with warm colors, suggesting a sunset ambiance, and prominently includes AI and tech references like "GPT-4" and "DALL-E 3." The overall atmosphere conveys a fusion of tradition and cutting-edge technology.
 
 
-* Parsing JSON with the GJSON Package
+* CUE Language (Configure Unify Execute)
 
 ** Overview
-- Fast JSON parser for Go
-- Uses path syntax to extract values from JSON
-- No serialization/deserialization required
-- Zero dependencies
-- Thread-safe
 
-** Key Features
-*** Path Syntax
-#+begin_src go
-{"name": {"first": "John"}}
-// Access with: "name.first" -> "John"
+CUE is a configuration and constraint language created by Google to help manage complex configurations and data validation.
+
+** Core Concepts
+
+*** Data Model
+- Open-world model
+- Inheritance and composition
+- Strongly typed
+- Declarative
+
+*** Key Features
+
+**** Type Constraints
+
+#+begin_src cue
+
+#Person: {
+    name:  string
+    age:   int & >=0 & <=120
+    email: string & =~"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+}
+
 #+end_src
 
-*** Supported Types
-- Strings
-- Numbers
-- Booleans
-- Null
-- Arrays
-- Objects
+**** Value Constraints
 
-*** Performance
-- Very fast parsing
-- No allocation overhead
-- Operates directly on []byte
+#+begin_src cue
 
-** Common Operations
-#+begin_src go
-value := gjson.Get(json, "path.to.value")
-value.String()  // Get as string
-value.Int()     // Get as integer
-value.Array()   // Get as array
-value.Map()     // Get as map
+settings: {
+    timeout: int & >=0 & <=60
+    mode:    "dev" | "prod" | "stage"
+}
+
 #+end_src
 
-** Modifiers
-- @reverse: Reverse array
-- @flatten: Flatten array
-- @join: Join array elements
-- @valid: Validate JSON
+** Integration with Go
 
-** Use Cases
-- API responses parsing
-- Configuration handling
-- JSON data extraction
-- Performance-critical JSON operations
+*** Go Struct Tags
+
+#+begin_src go
+
+type Person struct {
+    Name  string `json:"name" cue:"string"`
+    Age   int    `json:"age" cue:">=0 & <=120"`
+    Email string `json:"email"`
+}
+
+#+end_src
+
+*** Validation Example
+
+#+begin_src go
+
+import "cuelang.org/go/cue"
+
+const schema = `
+#Person: {
+    name:  string
+    age:   int & >=0
+    email: string
+}
+`
+
+func validate(data interface{}) error {
+    ctx := cue.context.New()
+    v := ctx.CompileString(schema)
+    return v.Validate()
+}
+
+#+end_src
+
+** Common Use Cases
+
+*** Configuration Management
+
+#+begin_src cue
+
+#Database: {
+    host:     string
+    port:     int & >=1024 & <=65535
+    user:     string
+    password: string
+}
+
+prod: #Database & {
+    host: "prod.db.example.com"
+    port: 5432
+    user: "admin"
+}
+
+#+end_src
+
+*** Data Validation
+
+#+begin_src cue
+
+#APIConfig: {
+    endpoints: [...{
+        path:   string & =~"^/"
+        method: "GET" | "POST" | "PUT" | "DELETE"
+        auth:   bool | *true
+    }]
+}
+
+#+end_src
+
+*** OpenAPI Generation
+
+#+begin_src cue
+
+openapi: "3.0.0"
+info: {
+    title:   "My API"
+    version: "1.0.0"
+}
+
+#+end_src
+
+** Tooling
+
+*** Command Line
+
+- cue eval
+- cue fmt
+- cue vet
+- cue export
+
+*** IDE Support
+
+- VSCode extension
+- GoLand/IntelliJ plugin
+
+** Best Practices
+
+*** Schema Definition
+
+- Use # prefix for definitions
+- Keep constraints simple and clear
+- Use meaningful names
+
+*** Error Handling
+
+#+begin_src go
+
+if err := val.Validate(); err != nil {
+    return fmt.Errorf("validation failed: %w", err)
+}
+
+#+end_src
+
+** Resources
+
+*** Official Documentation
+
+- https://cuelang.org/docs/
+- https://pkg.go.dev/cuelang.org/go/cue
+
+*** Learning Resources
+
+- Official tutorials
+- GitHub examples
+- Community guides
+
+** Common Patterns
+
+*** Default Values
+
+#+begin_src cue
+
+#Config: {
+    debug: bool | *false
+    port:  int | *8080
+}
+
+#+end_src
+
+*** Composition
+
+#+begin_src cue
+
+#Base: {
+    version: string
+}
+
+#Service: #Base & {
+    name:  string
+    ports: [...int]
+}
+
+#+end_src
+
+** Relationship with Go
+
+*** Integration Points
+
+- Direct Go API
+- Struct tag support
+- Code generation
+- Runtime validation
+
+*** Benefits
+
+- Type safety
+- Schema validation
+- Configuration management
+- Data modeling
+
+*** Use Cases
+
+- API definitions
+- Configuration files
+- Data validation
+- Schema generation
+
+** Error Messages
+
+#+begin_src cue
+
+invalid value "foo" (does not match ">=0 & <=120")
+conflicting values false and true
+field "required" not allowed
+
+#+end_src
+
+
+** CUE Language Documentation Links
+
+*** Official Resources
+- Main Website: [[https://cuelang.org/][https://cuelang.org/]]
+- Official Documentation: [[https://cuelang.org/docs/][https://cuelang.org/docs/]]
+- API Reference: [[https://pkg.go.dev/cuelang.org/go/cue][https://pkg.go.dev/cuelang.org/go/cue]]
+
+*** GitHub Resources
+- Main Repository: [[https://github.com/cue-lang/cue][https://github.com/cue-lang/cue]]
+- CUE Playground: [[https://cuelang.org/play/][https://cuelang.org/play/]]
+
+*** Learning Resources
+- Reference Guide: [[https://cuelang.org/docs/references/][https://cuelang.org/docs/references/]]
+- Specification: [[https://cuelang.org/docs/references/spec/][https://cuelang.org/docs/references/spec/]]
+
+* Demo 2: Basic API with Go and Cue
+
+** The Entities
+
+#+begin_src cue :tangle contracts/user.cue :mkdirp yes :cache no
+
+#User: {
+    id:   string
+    name: string & =~"^[A-Za-z ]+$"
+}
+
+#+end_src
+
+** Entities as JSON / Yaml Schema:
+
+#+begin_src bash :results output
+
+rm -rf contracts/basic_schema.yaml # delete if already exists
+
+cue def contracts/user.cue -o contracts/basic_schema.yaml --out openapi+yaml # generate schema
+
+cat contracts/basic_schema.yaml # show the contents of the resulting file
+
+#+end_src
+
+#+RESULTS:
+#+begin_example
+openapi: 3.0.0
+info:
+  title: Generated by cue.
+  version: no version
+paths: {}
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          pattern: ^[A-Za-z ]+$
+#+end_example
+
+
+** The OpenAPI Contract:
+
+Improving on the previous output, we manually include the `paths` definition.
+
+#+begin_src yaml
+
+# basic_schema.yaml
+openapi: 3.0.0
+info:
+  title: User API
+  version: 1.0.0
+paths:
+  /users:
+    post:
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          pattern: ^[A-Za-z ]+$
+
+#+end_src
+
+
+** The server:
+
+#+begin_src go :tangle demos/basic_cueapi.go :mkdirp yes :cache no
+package main
+
+// basic_cueapi.go
+
+import (
+	"encoding/json"
+	"fmt"
+	"log"
+	"net/http"
+
+	"cuelang.org/go/cue"
+	"cuelang.org/go/cue/cuecontext"
+)
+
+type User struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+const schema = `
+#User: {
+    id:   string
+    name: string & =~"^[A-Za-z ]+$"
+}
+`
+
+var ctx = cuecontext.New()
+var userSchema = ctx.CompileString(schema)
+
+func validateUser(u User) error {
+	val := ctx.Encode(u)
+	return val.Unify(userSchema.LookupPath(cue.ParsePath("#User"))).Err()
+}
+
+func userHandler(w http.ResponseWriter, r *http.Request) {
+
+	var user User
+	if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err := validateUser(user); err != nil {
+		fmt.Println(fmt.Errorf("INVALID_PAYLOAD:::: +%v", err))
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
+}
+
+func main() {
+	http.HandleFunc("POST /users", userHandler)
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+#+end_src
+
+
+Let's test this basic API:
+
+#+begin_src bash :results output
+
+echo "Happy Path Scenario Result:"
+echo ""
+curl -X POST localhost:8080/users -d '{"id":"1","name":"John Doe"}' # happy path test
+
+echo ""
+echo ""
+
+echo "Fail Validation Scenario Result:"
+echo ""
+curl -X POST localhost:8080/users -d '{"id":"1","name":"1234"}' # fail the schema validation
+
+#+end_src
+
+#+RESULTS:
+: Happy Path Scenario Result:
+:
+: {"id":"1","name":"John Doe"}
+:
+:
+: Fail Validation Scenario Result:
+:
+: name: invalid value "1234" (out of bound =~"^[A-Za-z ]+$")
+
+
+* References
