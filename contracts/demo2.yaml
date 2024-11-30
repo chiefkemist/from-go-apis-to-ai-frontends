@@ -1,0 +1,35 @@
+# basic_schema.yaml
+openapi: 3.0.0
+info:
+  title: User API
+  version: 1.0.0
+paths:
+  /users:
+    post:
+      summary: Create user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+          pattern: ^[A-Za-z ]+$
