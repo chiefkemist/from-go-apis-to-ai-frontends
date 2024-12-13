@@ -32,15 +32,15 @@ components:
       type: object
       required:
         - id
-        - title
+        - prompt
         - blob
       properties:
         id:
           description: Unique identifier
           type: string
           pattern: ^[0-9a-zA-Z -]{36}$
-        title:
-          description: Image title
+        prompt:
+          description: Image prompt
           type: string
           allOf:
             - pattern: ^.{3,100}$
@@ -56,15 +56,15 @@ components:
       type: object
       required:
         - id
-        - title
+        - prompt
         - status
       properties:
         id:
           description: Unique identifier
           type: string
           pattern: ^[0-9a-zA-Z -]{36}$
-        title:
-          description: Image title
+        prompt:
+          description: Image prompt
           type: string
           minLength: 3
           maxLength: 100

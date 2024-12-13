@@ -1,29 +1,38 @@
 package main
 
 import (
+	"bytes"
 	"embed"
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
+	"github.com/tidwall/gjson"
+)
+
+var (
+	apiURL = "https://api.openai.com/v1/chat/completions" // replace with actual endpoint
+	apiKey = os.Getenv("OPENAI_API_KEY")
 )
 
 //go:embed *
 var content embed.FS
 
 type ImageUpload struct {
-	ID    string `json:"id"`
-	Title string `json:"title"`
-	Blob  string `json:"blob"`
+	ID     string `json:"id"`
+	Prompt string `json:"prompt"`
+	Blob   string `json:"blob"`
 }
 
 type ImageUploadStatus struct {
 	ID     string `json:"id"`
-	Title  string `json:"title"`
+	Prompt string `json:"prompt"`
 	Status string `json:"status"`
 }
 
@@ -36,8 +45,8 @@ import "strings"
 	// Unique identifier
 	id: string & =~"^[0-9a-zA-Z -]{36}$"
 
-	// Image title
-	title: string & =~"^.{3,100}$" & =~"^[A-Za-z0-9 -_.]+$"
+	// Image prompt
+	prompt: string & =~"^.{3,100}$" & =~"^[A-Za-z0-9 -_.]+$"
 
 	// Base64 encoded image
 	blob: string & strings.MinRunes(3) & strings.MaxRunes(13_900_000) & =~"^data:image/(jpeg|png|gif|webp);base64,[A-Za-z0-9+/]+=*$"
@@ -48,8 +57,8 @@ import "strings"
 	// Unique identifier
 	id: string & =~"^[0-9a-zA-Z -]{36}$"
 
-	// Image title
-	title: string & strings.MinRunes(3) & strings.MaxRunes(100) & =~"^[A-Za-z0-9 -_.]+$"
+	// Image prompt
+	prompt: string & strings.MinRunes(3) & strings.MaxRunes(100) & =~"^[A-Za-z0-9 -_.]+$"
 
 	// Image upload status
 	status: string & strings.MinRunes(3) & strings.MaxRunes(300) & =~"^[A-Za-z0-9 -_.]+$"
@@ -80,7 +89,7 @@ func processImageUploadHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(fmt.Errorf("BAD_PAYLOAD:::: +%v", err))
 		status = ImageUploadStatus{
 			ID:     "bad-id",
-			Title:  "bad-title",
+			Prompt: "bad-prompt",
 			Status: err.Error(),
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -93,7 +102,7 @@ func processImageUploadHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(fmt.Errorf("INVALID_PAYLOAD:::: +%v with image size: %d", err, len(image.Blob)))
 		status = ImageUploadStatus{
 			ID:     "bad-id",
-			Title:  "bad-title",
+			Prompt: "bad-prompt",
 			Status: err.Error(),
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -102,13 +111,27 @@ func processImageUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	status = ImageUploadStatus{
-		ID:     image.ID,
-		Title:  image.Title,
-		Status: "Successfully processed",
+	if err, info := getInfoFromImage(image.Blob, image.Prompt); err != nil {
+		fmt.Println(fmt.Errorf("INFO_RETRIEVAL_ERROR:::: +%v with image size: %d", err, len(image.Blob)))
+		status = ImageUploadStatus{
+			ID:     "bad-id",
+			Prompt: "bad-prompt",
+			Status: err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(status)
+		return
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		status = ImageUploadStatus{
+			ID:     image.ID,
+			Prompt: image.Prompt,
+			Status: info,
+		}
+		fmt.Println(fmt.Sprintf("Extracted Image Data; +%v", status))
+		json.NewEncoder(w).Encode(status)
 	}
-	json.NewEncoder(w).Encode(status)
 }
 
 func main() {
@@ -161,3 +184,59 @@ const swaggerTemplate = `
   </body>
 </html>
 `
+
+func getInfoFromImage(imageUrl, prompt string) (error, string) {
+	requestBody, err := json.Marshal(map[string]any{
+		"model":      "gpt-4o",
+		"max_tokens": 4096,
+		"messages": []map[string]any{
+			{
+				"role": "user",
+				"content": []map[string]any{
+					{
+						"type": "text",
+						"text": prompt,
+					},
+					{
+						"type": "image_url",
+						"image_url": map[string]any{
+							"url": imageUrl,
+						},
+					},
+				},
+			},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("Error marshalling JSON: %w", err), ""
+	}
+
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(requestBody))
+	if err != nil {
+		return fmt.Errorf("Error creating request: %w", err), ""
+	}
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("Error making request: %w", err), ""
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("Error reading response body: %w", err), ""
+	}
+
+	responseString := string(body)
+	// fmt.Println("Response:", responseString)
+
+	result := gjson.Get(responseString, "choices.0.message.content")
+
+	response := result.Str
+	fmt.Println("Response:", response)
+
+	return nil, response
+}

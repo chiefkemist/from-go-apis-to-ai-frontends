@@ -11,6 +11,7 @@ export default function PhotoUploader() {
   const [processing, setProcessing] = useState(false)
   const [results, setResults] = useState<string[]>([])
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [imageType, setImageType] = useState<string>('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -18,6 +19,7 @@ export default function PhotoUploader() {
     if (file) {
       const url = URL.createObjectURL(file)
       setPreviewUrl(url)
+      setImageType(file.type) // Set the image type
     }
   }
 
@@ -27,27 +29,35 @@ export default function PhotoUploader() {
 
     const response = await extractImageInfo(formData)
 
+    setProcessing(false);
+
     if (response.success) {
-      const eventSource = new EventSource('/api/process-events')
-
-      eventSource.onmessage = (event) => {
-        setResults((prevResults) => [...prevResults, event.data])
-      }
-
-      eventSource.onerror = (error) => {
-        console.error(`EventSource failed: ${error}`)
-        eventSource.close()
-        setProcessing(false)
-      }
-
-      eventSource.addEventListener('done', () => {
-        eventSource.close()
-        setProcessing(false)
-      })
+      setResults([response.status]);
     } else {
       console.error(`Processing failed: ${response.error}`)
-      setProcessing(false)
     }
+
+    /* if (response.success) {
+*   const eventSource = new EventSource('/api/process-events')
+
+*   eventSource.onmessage = (event) => {
+*     setResults((prevResults) => [...prevResults, event.data])
+*   }
+
+*   eventSource.onerror = (error) => {
+*     console.error(`EventSource failed: ${error}`)
+*     eventSource.close()
+*     setProcessing(false)
+*   }
+
+*   eventSource.addEventListener('done', () => {
+*     eventSource.close()
+*     setProcessing(false)
+*   })
+* } else {
+*   console.error(`Processing failed: ${response.error}`)
+*   setProcessing(false)
+* } */
   }
 
   return (
@@ -59,8 +69,14 @@ export default function PhotoUploader() {
         <form action={handleSubmit}>
           <Input
             type="text"
-            name="title"
+            name="prompt"
             className="mb-4"
+            placeholder="Prompt for details on the image..."
+          />
+          <input
+            type="hidden"
+            name="imgtype"
+            value={imageType}
           />
           <Input
             type="file"

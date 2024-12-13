@@ -16,7 +16,7 @@
             "pattern": "^[0-9a-zA-Z -]{36}$",
             "type": "string"
           },
-          "title": {
+          "prompt": {
             "allOf": [
               {
                 "pattern": "^.{3,100}$"
@@ -25,13 +25,13 @@
                 "pattern": "^[A-Za-z0-9 -_.]+$"
               }
             ],
-            "description": "Image title",
+            "description": "Image prompt",
             "type": "string"
           }
         },
         "required": [
           "id",
-          "title",
+          "prompt",
           "blob"
         ],
         "type": "object"
@@ -44,16 +44,16 @@
             "pattern": "^[0-9a-zA-Z -]{36}$",
             "type": "string"
           },
-          "status": {
-            "description": "Image upload status",
-            "maxLength": 300,
+          "prompt": {
+            "description": "Image prompt",
+            "maxLength": 100,
             "minLength": 3,
             "pattern": "^[A-Za-z0-9 -_.]+$",
             "type": "string"
           },
-          "title": {
-            "description": "Image title",
-            "maxLength": 100,
+          "status": {
+            "description": "Image upload status",
+            "maxLength": 300,
             "minLength": 3,
             "pattern": "^[A-Za-z0-9 -_.]+$",
             "type": "string"
@@ -61,7 +61,7 @@
         },
         "required": [
           "id",
-          "title",
+          "prompt",
           "status"
         ],
         "type": "object"
