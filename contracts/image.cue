@@ -1,21 +1,25 @@
+import "strings"
+
 // Image upload contract
 #ImageUpload: {
-    // Unique identifier
-    id:    string & =~"^[0-9a-fA-F]{24}$"
+	// Unique identifier
+	id: string & =~"^[0-9a-zA-Z -]{36}$"
 
-    // Image title
-    title: string & {
-        minLength: 3
-        maxLength: 100
-        =~"^[A-Za-z0-9 -_.]+$"
-    }
+	// Image title
+	title: string & =~"^.{3,100}$" & =~"^[A-Za-z0-9 -_.]+$"
 
-    // Base64 encoded image
-    image: string & {
-        // Must be base64 encoded
-        =~"^data:image/(jpeg|png|gif);base64,[A-Za-z0-9+/]+=*$"
+	// Base64 encoded image
+	blob: string & strings.MinRunes(3) & strings.MaxRunes(13_900_000) & =~"^data:image/(jpeg|png|gif|webp);base64,[A-Za-z0-9+/]+=*$"
+}
 
-        // Reasonable size limit (10MB in base64)
-        maxLength: 13_900_000
-    }
+// Image upload status
+#ImageUploadStatus: {
+	// Unique identifier
+	id: string & =~"^[0-9a-zA-Z -]{36}$"
+
+	// Image title
+	title: string & strings.MinRunes(3) & strings.MaxRunes(100) & =~"^[A-Za-z0-9 -_.]+$"
+
+	// Image upload status
+	status: string & strings.MinRunes(3) & strings.MaxRunes(300) & =~"^[A-Za-z0-9 -_.]+$"
 }

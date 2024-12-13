@@ -1,6 +1,5 @@
 package main
 
-
 import (
 	"embed"
 	"encoding/json"
@@ -14,7 +13,7 @@ import (
 )
 
 
-//go:embed demo3/*
+//go:embed *
 var content embed.FS
 
 type User struct {
@@ -62,7 +61,7 @@ func main() {
     // Serve OpenAPI spec
     http.HandleFunc("GET /openapi.json", func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "application/json")
-        spec, _ := content.ReadFile("demo3/openapi.json")
+        spec, _ := content.ReadFile("openapi.json")
         w.Write(spec)
     })
 

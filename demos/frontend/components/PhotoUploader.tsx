@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { processPhoto } from "@/actions/processPhotos"
+import { extractImageInfo } from "@/actions/processImages"
 
 export default function PhotoUploader() {
   const [processing, setProcessing] = useState(false)
@@ -25,7 +25,7 @@ export default function PhotoUploader() {
     setProcessing(true)
     setResults([])
 
-    const response = await processPhoto(formData)
+    const response = await extractImageInfo(formData)
 
     if (response.success) {
       const eventSource = new EventSource('/api/process-events')
@@ -35,7 +35,7 @@ export default function PhotoUploader() {
       }
 
       eventSource.onerror = (error) => {
-        console.error('EventSource failed:', error)
+        console.error(`EventSource failed: ${error}`)
         eventSource.close()
         setProcessing(false)
       }
@@ -45,7 +45,7 @@ export default function PhotoUploader() {
         setProcessing(false)
       })
     } else {
-      console.error('Processing failed:', response.error)
+      console.error(`Processing failed: ${response.error}`)
       setProcessing(false)
     }
   }
@@ -58,9 +58,14 @@ export default function PhotoUploader() {
       <CardContent>
         <form action={handleSubmit}>
           <Input
+            type="text"
+            name="title"
+            className="mb-4"
+          />
+          <Input
             type="file"
             accept="image/*"
-            name="photo"
+            name="image"
             ref={fileInputRef}
             onChange={handleFileChange}
             className="mb-4"

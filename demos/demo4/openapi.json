@@ -1,0 +1,115 @@
+{
+  "components": {
+    "schemas": {
+      "ImageUpload": {
+        "description": "Image upload contract",
+        "properties": {
+          "blob": {
+            "description": "Base64 encoded image",
+            "maxLength": 13900000,
+            "minLength": 3,
+            "pattern": "^data:image/(jpeg|png|gif|webp);base64,[A-Za-z0-9+/]+=*$",
+            "type": "string"
+          },
+          "id": {
+            "description": "Unique identifier",
+            "pattern": "^[0-9a-zA-Z -]{36}$",
+            "type": "string"
+          },
+          "title": {
+            "allOf": [
+              {
+                "pattern": "^.{3,100}$"
+              },
+              {
+                "pattern": "^[A-Za-z0-9 -_.]+$"
+              }
+            ],
+            "description": "Image title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "blob"
+        ],
+        "type": "object"
+      },
+      "ImageUploadStatus": {
+        "description": "Image upload status",
+        "properties": {
+          "id": {
+            "description": "Unique identifier",
+            "pattern": "^[0-9a-zA-Z -]{36}$",
+            "type": "string"
+          },
+          "status": {
+            "description": "Image upload status",
+            "maxLength": 300,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9 -_.]+$",
+            "type": "string"
+          },
+          "title": {
+            "description": "Image title",
+            "maxLength": 100,
+            "minLength": 3,
+            "pattern": "^[A-Za-z0-9 -_.]+$",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "Image upload contract",
+    "version": "1.0.0"
+  },
+  "openapi": "3.0.0",
+  "paths": {
+    "/extract-image-info": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageUpload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageUploadStatus"
+                }
+              }
+            },
+            "description": "Image processed successfully"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageUploadStatus"
+                }
+              }
+            },
+            "description": "Image processing failed"
+          }
+        },
+        "summary": "Extract Image Info"
+      }
+    }
+  }
+}

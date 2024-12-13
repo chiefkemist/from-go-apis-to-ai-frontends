@@ -1,3 +1,10 @@
+:PROPERTIES:
+:GPTEL_MODEL: claude-3-5-sonnet-20241022
+:GPTEL_BACKEND: Claude
+:GPTEL_SYSTEM: You are a large language model living in Emacs and a helpful assistant. Respond concisely.
+:GPTEL_BOUNDS: nil
+:END:
+
 * Go Novella
 
 From Go APIs to AI-Featured Frontends...
@@ -447,11 +454,6 @@ fmt.Println(result.Str)
 
 #+end_src
 
-#+RESULTS:
-: Extracting Info from: assets/from-go-apis-to-ai-enhanced-frontends.webp
-:
-: The image depicts a vibrant and futuristic scene, blending technology and African cultural elements. In the foreground, people are working on computers in an open, innovative office space filled with colorful digital displays and lush plants. The background features an urban landscape with tall buildings and adorned with giant, artistic masks and planets hanging from the ceiling. The scene is infused with warm colors, suggesting a sunset ambiance, and prominently includes AI and tech references like "GPT-4" and "DALL-E 3." The overall atmosphere conveys a fusion of tradition and cutting-edge technology.
-
 
 * CUE Language (Configure Unify Execute)
 
@@ -505,6 +507,8 @@ type Person struct {
 }
 
 #+end_src
+
+#+RESULTS:
 
 *** Validation Example
 
@@ -792,7 +796,7 @@ components:
 
 ** The server:
 
-#+begin_src go :tangle demos/demo2.go :mkdirp yes :cache no
+#+begin_src go :tangle demos/demo2/demo2.go :mkdirp yes :cache no
 package main
 
 // basic_cueapi.go
@@ -898,7 +902,7 @@ go run cli.go y2j contracts/demo2.yaml demos/demo3/openapi.json
 
 ** Updated Server
 
-#+begin_src go :tangle demos/demo3.go :mkdirp yes :cache no
+#+begin_src go :tangle demos/demo3/demo3.go :mkdirp yes :cache no
 package main
 
 import (
@@ -914,7 +918,7 @@ import (
 )
 
 
-//go:embed demo3/*
+//go:embed *
 var content embed.FS
 
 type User struct {
@@ -962,7 +966,7 @@ func main() {
     // Serve OpenAPI spec
     http.HandleFunc("GET /openapi.json", func(w http.ResponseWriter, r *http.Request) {
         w.Header().Set("Content-Type", "application/json")
-        spec, _ := content.ReadFile("demo3/openapi.json")
+        spec, _ := content.ReadFile("openapi.json")
         w.Write(spec)
     })
 
@@ -1015,28 +1019,31 @@ const swaggerTemplate = `
 
 #+begin_src cue :tangle contracts/image.cue :mkdirp yes :cache no
 
+import "strings"
+
 // Image upload contract
 #ImageUpload: {
-    // Unique identifier
-    id:    string & =~"^[0-9a-fA-F]{24}$"
+	// Unique identifier
+	id: string & =~"^[0-9a-zA-Z -]{36}$"
 
-    // Image title
-    title: string & {
-        minLength: 3
-        maxLength: 100
-        =~"^[A-Za-z0-9 -_.]+$"
-    }
+	// Image title
+	title: string & =~"^.{3,100}$" & =~"^[A-Za-z0-9 -_.]+$"
 
-    // Base64 encoded image
-    image: string & {
-        // Must be base64 encoded
-        =~"^data:image/(jpeg|png|gif);base64,[A-Za-z0-9+/]+=*$"
-
-        // Reasonable size limit (10MB in base64)
-        maxLength: 13_900_000
-    }
+	// Base64 encoded image
+	blob: string & strings.MinRunes(3) & strings.MaxRunes(13_900_000) & =~"^data:image/(jpeg|png|gif|webp);base64,[A-Za-z0-9+/]+=*$"
 }
 
+// Image upload status
+#ImageUploadStatus: {
+	// Unique identifier
+	id: string & =~"^[0-9a-zA-Z -]{36}$"
+
+	// Image title
+	title: string & strings.MinRunes(3) & strings.MaxRunes(100) & =~"^[A-Za-z0-9 -_.]+$"
+
+	// Image upload status
+	status: string & strings.MinRunes(3) & strings.MaxRunes(300) & =~"^[A-Za-z0-9 -_.]+$"
+}
 
 #+end_src
 
@@ -1045,13 +1052,49 @@ const swaggerTemplate = `
 
 #+begin_src bash :results output
 
-rm -rf contracts/demo4.yaml # delete if already exists
+rm -rf contracts/image.yaml # delete if already exists
 
-cue def contracts/image.cue -o contracts/demo4.yaml --out openapi+yaml # generate schema
+cue def contracts/image.cue -o contracts/image.yaml --out openapi+yaml # generate schema
 
-cat contracts/demo4.yaml # show the contents of the resulting file
+cat contracts/image.yaml # show the contents of the resulting file
 
 #+end_src
+
+** The OpenAPI Contract:
+
+ We manually include the `paths` definition to the previous output.
+
+ #+begin_src yaml :tangle contracts/demo4.yaml :mkdirp yes :cache no
+
+openapi: 3.0.0
+info:
+  title: Image upload contract
+  version: 1.0.0
+paths:
+  /extract-image-info:
+    post:
+      summary: Extract Image Info
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageUpload'
+      responses:
+        '200':
+          description: Image processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUploadStatus'
+        '400':
+          description: Image processing failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUploadStatus'
+
+ #+end_src
 
 ** Yaml to JSON conversion
 
@@ -1059,6 +1102,184 @@ cat contracts/demo4.yaml # show the contents of the resulting file
 
 mkdir -p demos/demo4
 
-go run cli.go y2j contracts/demo2.yaml demos/demo4/openapi.json
+go run cli.go y2j contracts/demo4.yaml demos/demo4/openapi.json
 
 #+end_src
+
+#+RESULTS:
+: Successfully converted contracts/demo4.yaml to demos/demo4/openapi.json
+
+
+** The server:
+
+#+begin_src go :tangle demos/demo4/demo4.go :mkdirp yes :cache no
+
+package main
+
+import (
+	"embed"
+	"encoding/json"
+	"fmt"
+	"html/template"
+	"log"
+	"net/http"
+
+	"cuelang.org/go/cue"
+	"cuelang.org/go/cue/cuecontext"
+)
+
+//go:embed *
+var content embed.FS
+
+type ImageUpload struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
+	Blob  string `json:"blob"`
+}
+
+type ImageUploadStatus struct {
+	ID     string `json:"id"`
+	Title  string `json:"title"`
+	Status string `json:"status"`
+}
+
+const schema = `
+
+import "strings"
+
+// Image upload contract
+#ImageUpload: {
+	// Unique identifier
+	id: string & =~"^[0-9a-zA-Z -]{36}$"
+
+	// Image title
+	title: string & =~"^.{3,100}$" & =~"^[A-Za-z0-9 -_.]+$"
+
+	// Base64 encoded image
+	blob: string & strings.MinRunes(3) & strings.MaxRunes(13_900_000) & =~"^data:image/(jpeg|png|gif|webp);base64,[A-Za-z0-9+/]+=*$"
+}
+
+// Image upload status
+#ImageUploadStatus: {
+	// Unique identifier
+	id: string & =~"^[0-9a-zA-Z -]{36}$"
+
+	// Image title
+	title: string & strings.MinRunes(3) & strings.MaxRunes(100) & =~"^[A-Za-z0-9 -_.]+$"
+
+	// Image upload status
+	status: string & strings.MinRunes(3) & strings.MaxRunes(300) & =~"^[A-Za-z0-9 -_.]+$"
+}
+
+`
+
+var ctx = cuecontext.New()
+var compiledSchema = ctx.CompileString(schema)
+
+func validateImageUpload(p ImageUpload) error {
+	val := ctx.Encode(p)
+	return val.Unify(compiledSchema.LookupPath(cue.ParsePath("#ImageUpload"))).Err()
+}
+
+func validateImageUploadStatus(p ImageUploadStatus) error {
+	val := ctx.Encode(p)
+	return val.Unify(compiledSchema.LookupPath(cue.ParsePath("#ImageUploadStatus"))).Err()
+}
+
+func processImageUploadHandler(w http.ResponseWriter, r *http.Request) {
+
+	var (
+		image  ImageUpload
+		status ImageUploadStatus
+	)
+	if err := json.NewDecoder(r.Body).Decode(&image); err != nil {
+		fmt.Println(fmt.Errorf("BAD_PAYLOAD:::: +%v", err))
+		status = ImageUploadStatus{
+			ID:     "bad-id",
+			Title:  "bad-title",
+			Status: err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(status)
+		return
+	}
+
+	if err := validateImageUpload(image); err != nil {
+		fmt.Println(fmt.Errorf("INVALID_PAYLOAD:::: +%v with image size: %d", err, len(image.Blob)))
+		status = ImageUploadStatus{
+			ID:     "bad-id",
+			Title:  "bad-title",
+			Status: err.Error(),
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(status)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	status = ImageUploadStatus{
+		ID:     image.ID,
+		Title:  image.Title,
+		Status: "Successfully processed",
+	}
+	json.NewEncoder(w).Encode(status)
+}
+
+func main() {
+	// API endpoints
+	http.HandleFunc("POST /extract-image-info", processImageUploadHandler)
+
+	// Serve OpenAPI spec
+	http.HandleFunc("GET /openapi.json", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		spec, _ := content.ReadFile("openapi.json")
+		w.Write(spec)
+	})
+
+	// Serve Swagger UI
+	http.HandleFunc("GET /docs", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		tmpl := template.Must(template.New("swagger").Parse(swaggerTemplate))
+		tmpl.Execute(w, nil)
+	})
+
+	log.Printf("Server starting on http://localhost:8080")
+	log.Printf("API documentation available at http://localhost:8080/docs")
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+const swaggerTemplate = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>API Documentation</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css">
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"></script>
+    <script>
+      window.onload = function() {
+        window.ui = SwaggerUIBundle({
+          url: '/openapi.json',
+          dom_id: '#swagger-ui',
+          deepLinking: true,
+          presets: [
+            SwaggerUIBundle.presets.apis,
+            SwaggerUIBundle.SwaggerUIStandalonePreset
+          ],
+        });
+      };
+    </script>
+  </body>
+</html>
+`
+
+#+end_src
+
+* References
+
+- [[https://x.com/dhh/status/1841876620141068560][Cognitive-behavioral therapy to cure server-phobia]]

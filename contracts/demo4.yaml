@@ -1,0 +1,77 @@
+openapi: 3.0.0
+info:
+  title: Image upload contract
+  version: 1.0.0
+paths:
+  /extract-image-info:
+    post:
+      summary: Extract Image Info
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageUpload'
+      responses:
+        '200':
+          description: Image processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUploadStatus'
+        '400':
+          description: Image processing failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageUploadStatus'
+components:
+  schemas:
+    ImageUpload:
+      description: Image upload contract
+      type: object
+      required:
+        - id
+        - title
+        - blob
+      properties:
+        id:
+          description: Unique identifier
+          type: string
+          pattern: ^[0-9a-zA-Z -]{36}$
+        title:
+          description: Image title
+          type: string
+          allOf:
+            - pattern: ^.{3,100}$
+            - pattern: ^[A-Za-z0-9 -_.]+$
+        blob:
+          description: Base64 encoded image
+          type: string
+          minLength: 3
+          maxLength: 13900000
+          pattern: ^data:image/(jpeg|png|gif|webp);base64,[A-Za-z0-9+/]+=*$
+    ImageUploadStatus:
+      description: Image upload status
+      type: object
+      required:
+        - id
+        - title
+        - status
+      properties:
+        id:
+          description: Unique identifier
+          type: string
+          pattern: ^[0-9a-zA-Z -]{36}$
+        title:
+          description: Image title
+          type: string
+          minLength: 3
+          maxLength: 100
+          pattern: ^[A-Za-z0-9 -_.]+$
+        status:
+          description: Image upload status
+          type: string
+          minLength: 3
+          maxLength: 300
+          pattern: ^[A-Za-z0-9 -_.]+$
