@@ -4,7 +4,8 @@ import crypto from "node:crypto"
 
 export async function extractImageInfo(formData: FormData) {
   try {
-    const prompt = formData.get("prompt") as string || "Please describe the image in details";
+    const rawPrompt = formData.get("prompt") as string || "Describe the image.";
+    const prompt = `${rawPrompt}. Please include as much details as possible and answer in markdown format.`
     const imageType = formData.get('imgtype') as string;
     if (!imageType) {
       throw new Error('Image type not provided');

@@ -1015,6 +1015,30 @@ const swaggerTemplate = `
 
 * Demo 4: Image Information Retrieval
 
+** Highlights
+
+*** Image type management
+
+React hook retrieves the image type directly from uploaded image `File` object and sets hidden field
+
+*** Image size management
+
+Image size is enforced in API via `min` and `max` string length.
+
+A rough calculation of the base64 size of a 10MB string:
+
+1. First, convert 10MB to bytes:
+   * 10MB = 10 * 1024 * 1024 = 10,485,760 bytes
+
+2. Apply the formula: ceil(n / 3) * 4
+   * n = 10,485,760
+   * 10,485,760 / 3 = 3,495,253.33...
+   * ceil(3,495,253.33...) = 3,495,254
+   * 3,495,254 * 4 = 13,981,016 bytes
+
+So a `10MB string` will be approximately `13.98MB` when base64 encoded
+(13,981,016 bytes ≈ 13.98MB)
+
 ** The Entities
 
 #+begin_src cue :tangle contracts/image.cue :mkdirp yes :cache no
