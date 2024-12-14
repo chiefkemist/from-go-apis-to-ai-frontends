@@ -35,8 +35,10 @@ export async function extractImageInfo(formData: FormData) {
     };
     const body = JSON.stringify(payload);
 
+    const API_ENDPOINT = process.env.API_ENDPOINT || "http://localhost:8080";
+
     // Send base64 to remote API (replace with your actual API endpoint)
-    const response = await fetch("http://localhost:8080/extract-image-info", {
+    const response = await fetch(`${API_ENDPOINT}/extract-image-info`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
