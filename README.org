@@ -1494,6 +1494,23 @@ func getInfoFromImage(imageUrl, prompt string) (error, string) {
 
 * Demo 5: Double Streaming
 
+#+begin_src mermaid
+
+sequenceDiagram
+    participant LLM as Large Language Model (LLM)
+    participant BE as Backend
+    participant UI as User Interface (UI)
+
+    UI->>BE: 1. Send request with prompt
+    BE->>LLM: 2. Forward prompt request
+    Note right of LLM: LLM starts generating and returns<br> partial tokens as they are ready.
+    LLM-->>BE: 3. Stream partial tokens
+    Note right of BE: Backend receives each chunk,<br> does minimal processing/aggregation.
+    BE-->>UI: 4. Stream partial tokens
+    Note right of UI: UI renders tokens in real-time,<br> creating a live streaming experience.
+
+#+end_src
+
 ** Entities
 
 #+begin_src cue :tangle contracts/image2.cue :mkdirp yes :cache no
