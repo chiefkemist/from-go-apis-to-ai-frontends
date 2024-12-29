@@ -1492,22 +1492,25 @@ func getInfoFromImage(imageUrl, prompt string) (error, string) {
 
 #+end_src
 
-* Demo 5: Double Streaming
+* Demo 5: Triple Streaming
 
 #+begin_src mermaid
 
 sequenceDiagram
-    participant LLM as Large Language Model (LLM)
+    participant LLM as Large Language Model
     participant BE as Backend
-    participant UI as User Interface (UI)
+    participant UI as UI Layer
+    participant BR as Browser
 
-    UI->>BE: 1. Send request with prompt
-    BE->>LLM: 2. Forward prompt request
-    Note right of LLM: LLM starts generating and returns<br> partial tokens as they are ready.
-    LLM-->>BE: 3. Stream partial tokens
-    Note right of BE: Backend receives each chunk,<br> does minimal processing/aggregation.
-    BE-->>UI: 4. Stream partial tokens
-    Note right of UI: UI renders tokens in real-time,<br> creating a live streaming experience.
+    BR->>UI: 1. Request (prompt/interaction)
+    UI->>BE: 2. Forward prompt
+    BE->>LLM: 3. Call LLM with stream=true
+    Note right of LLM: LLM generates<br> tokens incrementally
+    LLM-->>BE: 4. Stream partial tokens
+    Note right of BE: Backend relays tokens<br> as they arrive
+    BE-->>UI: 5. Stream partial tokens
+    UI-->>BR: 6. Push partial tokens to browser
+    Note right of BR: Browser updates the UI in real-time,<br> displaying tokens as they stream
 
 #+end_src
 
@@ -1692,7 +1695,7 @@ go run cli.go y2j contracts/demo5.yaml demos/demo5/openapi.json
 
 ** The server:
 
-#+begin_src go :tangle demos/demo4/demo4.go :mkdirp yes :cache no
+#+begin_src go :tangle demos/demo5/demo5.go :mkdirp yes :cache no
 
 package main
 
